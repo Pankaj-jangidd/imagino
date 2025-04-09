@@ -18,7 +18,8 @@ export default function ImageDisplay({ src, alt }: ImageDisplayProps) {
           priority
         />
       </div>
-      <div className="absolute inset-0 ring-1 ring-white/10 rounded-lg pointer-events-none"></div>
+      <div className="absolute inset-0 ring-1 ring-white/10 rounded-lg pointer-events-none">
+      </div>
     </div>
   )
 }
