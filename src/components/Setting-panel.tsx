@@ -129,66 +129,9 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
             />
           </div>
         </div>
-      </div>
-
+      </div>      
       <Separator className="bg-white/10" />
 
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Layers className="h-4 w-4 text-purple-300" />
-          <h3 className="font-medium">Model</h3>
-        </div>
-        <Select value={settings.model} onValueChange={(value) => handleSelectChange("model", value)}>
-          <SelectTrigger className="bg-white/5 border-white/10">
-            <SelectValue placeholder="Select model" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="stable-diffusion-xl">Stable Diffusion XL</SelectItem>
-            <SelectItem value="midjourney-v5">Midjourney v5</SelectItem>
-            <SelectItem value="dalle-3">DALL-E 3</SelectItem>
-            <SelectItem value="sdxl-turbo">SDXL Turbo</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Separator className="bg-white/10" />
-
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Palette className="h-4 w-4 text-purple-300" />
-          <h3 className="font-medium">Style</h3>
-        </div>
-        <Select value={settings.style} onValueChange={(value) => handleSelectChange("style", value)}>
-          <SelectTrigger className="bg-white/5 border-white/10">
-            <SelectValue placeholder="Select style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="photorealistic">Photorealistic</SelectItem>
-            <SelectItem value="anime">Anime</SelectItem>
-            <SelectItem value="digital-art">Digital Art</SelectItem>
-            <SelectItem value="oil-painting">Oil Painting</SelectItem>
-            <SelectItem value="3d-render">3D Render</SelectItem>
-            <SelectItem value="pixel-art">Pixel Art</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Separator className="bg-white/10" />
-
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Sparkles className="h-4 w-4 text-purple-300" />
-          <h3 className="font-medium">Advanced</h3>
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="enhance-prompt">Enhance Prompt</Label>
-          <Switch
-            id="enhance-prompt"
-            checked={settings.enhancePrompt}
-            onCheckedChange={(checked) => handleSwitchChange("enhancePrompt", checked)}
-          />
-        </div>
-      </div>
     </div>
   )
 }

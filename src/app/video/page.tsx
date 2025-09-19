@@ -1,81 +1,201 @@
 'use client';
 
 import { useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import axios from 'axios';
+import Head from 'next/head';
 
-export default function ImageToVideo() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+// Define TypeScript interfaces
+interface SlideContent {
+  title: string;
+  content: string[];
+}
+
+interface PresentationResult {
+  status: string;
+  file_path: string;
+  preview: SlideContent[];
+}
+
+interface ApiError {
+  detail: string;
+}
+
+export default function Home() {
+  // State variables
+  const [topic, setTopic] = useState<string>('');
+  const [numSlides, setNumSlides] = useState<number>(5);
+  const [style, setStyle] = useState<'modern' | 'minimalist' | 'corporate'>('modern');
   const [loading, setLoading] = useState<boolean>(false);
-  const [duration, setDuration] = useState<5 | 10>(5);
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('landscape');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
+  const [result, setResult] = useState<SlideContent[] | null>(null);
+  const [fileId, setFileId] = useState<string>('');
 
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: { 'image/*': [] },
-    onDrop: (acceptedFiles) => setSelectedFile(acceptedFiles[0]),
-  });
-
-  const handleGenerateVideo = async () => {
-    if (!selectedFile) return;
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
-    setError(null);
-    
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('duration', duration.toString());
-    formData.append('orientation', orientation);
+    setError('');
+    setResult(null);
 
     try {
-      const { data } = await axios.post('/api/img2vdo', formData);
-      console.log('Server response:', data);
-      
-      if (data && data.videoUrl) {
-        setVideoUrl(data.videoUrl);
-      } else {
-        throw new Error('Invalid response from server');
+      const response = await fetch('http://localhost:8000/api/generate-presentation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic,
+          num_slides: numSlides,
+          style,
+        }),
+      });
+
+      const data = await response.json() as PresentationResult | ApiError;
+
+      if (!response.ok) {
+        throw new Error('detail' in data ? data.detail : 'Failed to generate presentation');
       }
-    } catch (error: any) {
-      console.error('Error generating video:', error.response?.data || error.message);
-      setError(error.response?.data?.message || 'Failed to generate video. Please try again.');
+
+      const presentationData = data as PresentationResult;
+      setResult(presentationData.preview);
+      
+      // Extract file ID from file path
+      const filePathParts = presentationData.file_path.split(/[\/\\]/); // Handle both forward and backslashes
+      const fileName = filePathParts[filePathParts.length - 1];
+      const extractedFileId = fileName.replace('.pptx', '');
+      setFileId(extractedFileId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
     }
-    
+  };
+
+  // Handle PowerPoint download
+  const handleDownload = () => {
+    if (fileId) {
+      window.open(`http://localhost:8000/api/download/${fileId}`, '_blank');
+    }
+  };
+
+  // Handle number input change with proper type conversion
+  const handleNumSlidesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(e.target.value, 10);
+    if (!isNaN(value)) {
+      setNumSlides(value);
+    }
   };
 
   return (
-    <div className="flex flex-col items-center p-6 space-y-4">
-      <div {...getRootProps()} className="border-dashed border-2 p-10 cursor-pointer text-center">
-        <input {...getInputProps()} />
-        {selectedFile ? (
-          <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-32 h-32 object-contain mt-2" />
-        ) : (
-          <p>Drag & drop an image or click to select</p>
+    <div className="min-h-screen bg-gray-100">
+      <Head>
+        <title>Text-to-PowerPoint Generator</title>
+        <meta name="description" content="Generate PowerPoint presentations from text prompts" />
+      </Head>
+
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-center mb-8">Text-to-PowerPoint Generator</h1>
+        
+        {/* Form */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
+                Presentation Topic
+              </label>
+              <input
+                type="text"
+                id="topic"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                placeholder="Enter your presentation topic"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label htmlFor="numSlides" className="block text-sm font-medium text-gray-700 mb-1">
+                  Number of Slides (3-15)
+                </label>
+                <input
+                  type="number"
+                  id="numSlides"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={numSlides}
+                  onChange={handleNumSlidesChange}
+                  min={3}
+                  max={15}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="style" className="block text-sm font-medium text-gray-700 mb-1">
+                  Presentation Style
+                </label>
+                <select
+                  id="style"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={style}
+                  onChange={(e) => setStyle(e.target.value as 'modern' | 'minimalist' | 'corporate')}
+                >
+                  <option value="modern">Modern</option>
+                  <option value="minimalist">Minimalist</option>
+                  <option value="corporate">Corporate</option>
+                </select>
+              </div>
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+              disabled={loading}
+            >
+              {loading ? 'Generating...' : 'Generate Presentation'}
+            </button>
+          </form>
+        </div>
+        
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8 rounded">
+            <p>{error}</p>
+          </div>
         )}
-      </div>
+        
+        {/* Results */}
+        {result && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Presentation Preview</h2>
+              <button
+                onClick={handleDownload}
+                className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+              >
+                Download PowerPoint
+              </button>
+            </div>
+            
+            <div className="space-y-6">
+              {result.map((slide, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-2">{slide.title}</h3>
+                  <ul className="list-disc pl-5">
+                    {slide.content.map((item, i) => (
+                      <li key={i} className="mb-1">{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
       
-      <div className="flex space-x-4">
-        <button className={`px-4 py-2 rounded ${duration === 5 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => setDuration(5)}>5s</button>
-        <button className={`px-4 py-2 rounded ${duration === 10 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => setDuration(10)}>10s</button>
-      </div>
-
-      <div className="flex space-x-4">
-        <button className={`px-4 py-2 rounded ${orientation === 'portrait' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => setOrientation('portrait')}>Portrait</button>
-        <button className={`px-4 py-2 rounded ${orientation === 'landscape' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`} onClick={() => setOrientation('landscape')}>Landscape</button>
-      </div>
-
-      <button onClick={handleGenerateVideo} disabled={loading || !selectedFile} className="px-4 py-2 bg-green-500 text-white rounded disabled:bg-gray-400">
-        {loading ? 'Generating...' : 'Generate Video'}
-      </button>
-      
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      
-      {videoUrl && (
-        <video controls className="mt-4 w-full max-w-md">
-          <source src={videoUrl} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      )}
+      <footer className="text-center py-6 text-gray-600">
+        <p>Powered by Text-to-PPT Generator API</p>
+      </footer>
     </div>
   );
 }

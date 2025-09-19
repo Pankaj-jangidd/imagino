@@ -9,15 +9,15 @@ import ImageDisplay from "../components/Image-display"
 import CustomLoader from "../components/CustomLoader"
 import SettingsPanel from "../components/Setting-panel"
 import ImageHistory from "../components/Image-history"
+import PresentationGenerator from "@/components/Presentation-generator"
 
 // Types for images
 interface HistoryImage {
   id: string
-  url: string  // Now stored as a Base64 string
+  url: string
   prompt: string
 }
 
-// Helper: Convert Blob to Base64 string
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -31,14 +31,8 @@ export default function ImageGenerationPage() {
   const [prompt, setPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
-
-  // Track which tab is active: "prompt" or "history"
   const [activeTab, setActiveTab] = useState("prompt")
-
-  // Image history state
   const [imageHistory, setImageHistory] = useState<HistoryImage[]>([])
-
-  // Lifted settings state for generation
   const [settings, setSettings] = useState({
     width: 512,
     height: 512,
@@ -49,11 +43,8 @@ export default function ImageGenerationPage() {
     model: "stable-diffusion-xl",
     style: "photorealistic",
   })
-
-  // For full-screen modal when clicking an image
   const [modalImage, setModalImage] = useState<HistoryImage | null>(null)
 
-  // Load history from localStorage on mount
   useEffect(() => {
     const storedHistory = localStorage.getItem("imageHistory")
     if (storedHistory) {
@@ -61,16 +52,14 @@ export default function ImageGenerationPage() {
     }
   }, [])
 
-  // Save history to localStorage whenever it updates
   useEffect(() => {
     localStorage.setItem("imageHistory", JSON.stringify(imageHistory))
   }, [imageHistory])
 
-  // API call using Hugging Face Inference endpoint.
   async function query(data: any) {
     const apiKey = process.env.NEXT_PUBLIC_HF_API_KEY
     if (!apiKey) {
-      throw new Error("API key is missing. Please add it to your .env.local file.")
+      throw new Error("API key is missing.")
     }
     const response = await fetch(
       "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large",
@@ -85,15 +74,11 @@ export default function ImageGenerationPage() {
     )
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(
-        `Failed to fetch image: ${response.status} ${response.statusText} - ${errorText}`
-      )
+      throw new Error(`Failed to fetch image: ${response.status} ${errorText}`)
     }
     return await response.blob()
   }
 
-  // Generate image via the API call using prompt and settings,
-  // then convert the blob to a Base64 string.
   const generateImage = async () => {
     if (!prompt.trim()) return
 
@@ -101,7 +86,6 @@ export default function ImageGenerationPage() {
     setGeneratedImage(null)
 
     try {
-      // Build payload with prompt and settings parameters.
       const payload = {
         inputs: prompt,
         parameters: {
@@ -123,12 +107,10 @@ export default function ImageGenerationPage() {
           url: base64Image,
           prompt: prompt,
         }
-        // Add new image to history (at the front)
         setImageHistory((prev) => [newImage, ...prev])
-        // Auto-switch to the History tab
         setActiveTab("history")
       } else {
-        throw new Error("Failed to generate the image. Please try again.")
+        throw new Error("Failed to generate the image.")
       }
     } catch (error: any) {
       console.error("Error generating image:", error)
@@ -137,18 +119,9 @@ export default function ImageGenerationPage() {
     }
   }
 
-  // Handle user clicking an image in the history (to open modal)
-  const handleHistorySelect = (img: HistoryImage) => {
-    setModalImage(img)
-  }
+  const handleHistorySelect = (img: HistoryImage) => setModalImage(img)
+  const handleCloseModal = () => setModalImage(null)
 
-  // Close the modal
-  const handleCloseModal = () => {
-    console.log("Close modal clicked")
-    setModalImage(null)
-  }
-
-  // Download image function for the modal
   const handleDownload = (url: string) => {
     const link = document.createElement("a")
     link.href = url
@@ -158,7 +131,6 @@ export default function ImageGenerationPage() {
     document.body.removeChild(link)
   }
 
-  // Delete image from history and close modal
   const handleDelete = (id: string) => {
     setImageHistory((prev) => prev.filter((item) => item.id !== id))
     setModalImage(null)
@@ -166,23 +138,36 @@ export default function ImageGenerationPage() {
 
   return (
     <main className="flex h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 text-white overflow-hidden relative">
-      {/* Left sidebar – Settings */}
-      <div className="w-1/4 border-r border-white/10 p-4 overflow-y-auto">
-        <div className="flex items-center gap-2 mb-6">
-          <Settings className="h-5 w-5" />
-          <h2 className="text-xl font-bold">Generation Settings</h2>
-        </div>
-        <SettingsPanel settings={settings} setSettings={setSettings} />
+
+      {/* Sidebar – Show only when in prompt tab */}
+      <div
+        className={`
+          transition-all duration-700 ease-in-out
+          ${activeTab === "prompt" ? "w-1/4 opacity-100" : "w-0 opacity-0 pointer-events-none"}
+          border-r border-white/10 bg-black/20 overflow-y-auto flex flex-col items-center justify-center
+        `}
+      >
+        {activeTab === "prompt" && (
+          <div className="w-full px-4">
+            <div className="flex items-center gap-2 mb-6 justify-center">
+              <Settings className="h-5 w-5" />
+              <h2 className="text-xl font-bold text-center">Generation Settings</h2>
+            </div>
+            <SettingsPanel settings={settings} setSettings={setSettings} />
+          </div>
+        )}
       </div>
 
-      {/* Right side: Tabs for Prompt & History */}
+      {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          {/* Tab Headers */}
-          <div className="border-b border-white/10 bg-black/20 backdrop-blur-md px-6 pt-4">
+
+          {/* Tabs menu */}
+          <div className="border-b border-white/10 bg-black/20 backdrop-blur-md px-6 pt-4 flex justify-center">
             <TabsList className="bg-white/10">
-              <TabsTrigger value="prompt">Prompt</TabsTrigger>
+              <TabsTrigger value="prompt">Prompt-to-Image</TabsTrigger>
               <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="ppt">Text-to-PPT</TabsTrigger>
             </TabsList>
           </div>
 
@@ -194,7 +179,6 @@ export default function ImageGenerationPage() {
                   <CustomLoader />
                 </div>
               )}
-              {/* Display placeholder only when not generating */}
               {!isGenerating && (
                 <div className="text-center p-6 rounded-xl bg-white/5 backdrop-blur-md mb-6">
                   <Sparkles className="h-16 w-16 mx-auto mb-4 text-purple-300" />
@@ -227,6 +211,13 @@ export default function ImageGenerationPage() {
           <TabsContent value="history" className="flex-1 overflow-auto p-6">
             <ImageHistory images={imageHistory} onSelect={handleHistorySelect} />
           </TabsContent>
+
+          {/* Text-2-PPT Tab */}
+          <TabsContent value="ppt" className="flex-1 overflow-auto p-6">
+            <div className="text-center p-6 rounded-xl bg-white/5 backdrop-blur-md mb-6">
+              <PresentationGenerator />
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -234,40 +225,27 @@ export default function ImageGenerationPage() {
       {modalImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
           <div className="relative w-full max-w-3xl max-h-[90vh] p-4 flex flex-col items-center">
-            {/* Close Button with inline styles to ensure clickability */}
             <button
               onClick={handleCloseModal}
-              style={{ pointerEvents: "auto", zIndex: 1000 }}
-              className="absolute top-4 right-4 text-white hover:text-gray-200"
+              className="absolute top-4 right-4 text-white hover:text-gray-200 z-50"
             >
               <XCircle className="h-8 w-8" />
             </button>
 
-            {/* Display the clicked image */}
             <div className="mb-4 w-full flex-1 relative flex items-center justify-center overflow-hidden">
               <ImageDisplay src={modalImage.url} alt={modalImage.prompt} />
             </div>
 
-            {/* Prompt text */}
             <p className="text-sm text-center text-white/80 mb-4">
               Prompt: {modalImage.prompt}
             </p>
 
-            {/* Download & Delete Buttons */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => handleDownload(modalImage.url)}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={() => handleDownload(modalImage.url)} className="gap-2">
                 <Download className="h-4 w-4" />
                 Download
               </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleDelete(modalImage.id)}
-                className="gap-2"
-              >
+              <Button variant="destructive" onClick={() => handleDelete(modalImage.id)} className="gap-2">
                 Delete
               </Button>
             </div>
