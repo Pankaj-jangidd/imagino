@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import RunwayML from "@runwayml/sdk";
 
+export const dynamic = 'force-dynamic';
+
 interface ImageToVideoResponse {
   id: string;
 }
