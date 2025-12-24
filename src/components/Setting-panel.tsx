@@ -1,13 +1,10 @@
 "use client"
 
-import { useState } from "react"
 import { Slider } from "../components/ui/Slider"
 import { Label } from "../components/ui/Label"
-import { Switch } from "../components/ui/Switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/Select"
 import { Separator } from "../components/ui/Separator"
 import { Badge } from "../components/ui/Badge"
-import { Wand2, Layers, Sparkles, Palette, Maximize2 } from "lucide-react"
+import { Maximize2, Wand2, Sliders } from "lucide-react"
 
 // Define prop types for clarity
 interface Settings {
@@ -31,26 +28,21 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
     setSettings({ ...settings, [name]: value[0] })
   }
 
-  const handleSwitchChange = (name: string, checked: boolean) => {
-    setSettings({ ...settings, [name]: checked })
-  }
-
-  const handleSelectChange = (name: string, value: string) => {
-    setSettings({ ...settings, [name]: value })
-  }
-
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Maximize2 className="h-4 w-4 text-purple-300" />
-          <h3 className="font-medium">Dimensions</h3>
+      {/* Dimensions Section */}
+      <div className="glass rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Maximize2 className="h-4 w-4 text-cyan-400" />
+          <h3 className="font-medium text-sm">Dimensions</h3>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <div className="flex justify-between mb-2">
-              <Label>Width</Label>
-              <Badge variant="outline">{settings.width}px</Badge>
+            <div className="flex justify-between mb-3">
+              <Label className="text-white/70 text-sm">Width</Label>
+              <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                {settings.width}px
+              </Badge>
             </div>
             <Slider
               value={[settings.width]}
@@ -62,9 +54,11 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
             />
           </div>
           <div>
-            <div className="flex justify-between mb-2">
-              <Label>Height</Label>
-              <Badge variant="outline">{settings.height}px</Badge>
+            <div className="flex justify-between mb-3">
+              <Label className="text-white/70 text-sm">Height</Label>
+              <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/30">
+                {settings.height}px
+              </Badge>
             </div>
             <Slider
               value={[settings.height]}
@@ -78,18 +72,19 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
         </div>
       </div>
 
-      <Separator className="bg-white/10" />
-
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Wand2 className="h-4 w-4 text-purple-300" />
-          <h3 className="font-medium">Generation Parameters</h3>
+      {/* Generation Parameters */}
+      <div className="glass rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Sliders className="h-4 w-4 text-purple-400" />
+          <h3 className="font-medium text-sm">Parameters</h3>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
-            <div className="flex justify-between mb-2">
-              <Label>Steps</Label>
-              <Badge variant="outline">{settings.steps}</Badge>
+            <div className="flex justify-between mb-3">
+              <Label className="text-white/70 text-sm">Steps</Label>
+              <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                {settings.steps}
+              </Badge>
             </div>
             <Slider
               value={[settings.steps]}
@@ -101,9 +96,11 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
             />
           </div>
           <div>
-            <div className="flex justify-between mb-2">
-              <Label>Guidance Scale</Label>
-              <Badge variant="outline">{settings.guidance}</Badge>
+            <div className="flex justify-between mb-3">
+              <Label className="text-white/70 text-sm">Guidance</Label>
+              <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                {settings.guidance}
+              </Badge>
             </div>
             <Slider
               value={[settings.guidance]}
@@ -115,9 +112,11 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
             />
           </div>
           <div>
-            <div className="flex justify-between mb-2">
-              <Label>Seed</Label>
-              <Badge variant="outline">{settings.seed === -1 ? "Random" : settings.seed}</Badge>
+            <div className="flex justify-between mb-3">
+              <Label className="text-white/70 text-sm">Seed</Label>
+              <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+                {settings.seed === -1 ? "Random" : settings.seed}
+              </Badge>
             </div>
             <Slider
               value={[settings.seed === -1 ? 0 : settings.seed]}
@@ -129,9 +128,7 @@ export default function SettingsPanel({ settings, setSettings }: SettingsPanelPr
             />
           </div>
         </div>
-      </div>      
-      <Separator className="bg-white/10" />
-
+      </div>
     </div>
   )
 }

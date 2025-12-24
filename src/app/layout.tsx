@@ -1,28 +1,34 @@
-import type React from "react"
-import "./globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "../components/ThemeProvider"
+import type { Metadata } from "next";
+import { Outfit, Righteous } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] })
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-outfit",
+});
 
-export const metadata = {
-  title: "AI Image Generator",
-  description: "Generate amazing AI art with our futuristic image generator",
-}
+const righteous = Righteous({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-righteous",
+});
+
+export const metadata: Metadata = {
+  title: "IMAGINO - AI Image Generator",
+  description: "Create stunning AI-generated images with IMAGINO",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+    <html className="dark" lang="en">
+      <body className={`${outfit.className} ${righteous.variable} bg-background-dark text-white overflow-x-hidden min-h-screen relative`}>
+        {children}
       </body>
     </html>
-  )
+  );
 }
-

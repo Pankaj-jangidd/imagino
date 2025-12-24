@@ -8,7 +8,7 @@ interface Particle {
   size: number;
   speedX: number;
   speedY: number;
-  color: string;
+  hue: number;
 }
 
 export default function CustomLoader() {
@@ -16,68 +16,95 @@ export default function CustomLoader() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return; // Prevents 'canvas is possibly null' error
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return; // Ensures ctx is valid
+    if (!ctx) return;
 
-    // Set canvas dimensions
     canvas.width = 200;
     canvas.height = 200;
 
     const particles: Particle[] = [];
-    const particleCount = 100;
+    const particleCount = 60;
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
 
     for (let i = 0; i < particleCount; i++) {
+      const angle = (i / particleCount) * Math.PI * 2;
+      const radius = 30 + Math.random() * 40;
       particles.push({
-        x: canvas.width / 2,
-        y: canvas.height / 2,
-        size: Math.random() * 5 + 1,
-        speedX: (Math.random() - 0.5) * 3,
-        speedY: (Math.random() - 0.5) * 3,
-        color: `hsl(${Math.random() * 60 + 240}, 100%, 50%)`,
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+        size: Math.random() * 3 + 1,
+        speedX: Math.cos(angle) * (0.5 + Math.random() * 0.5),
+        speedY: Math.sin(angle) * (0.5 + Math.random() * 0.5),
+        hue: 260 + Math.random() * 40,
       });
     }
 
+    let rotation = 0;
+
     function animate() {
-      const canvas = canvasRef.current; // Re-check inside animation loop
+      const canvas = canvasRef.current;
       if (!canvas) return;
 
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      particles.forEach((p) => {
-        p.x += p.speedX;
-        p.y += p.speedY;
+      rotation += 0.02;
 
-        if (p.x > canvas.width || p.x < 0) p.speedX *= -1;
-        if (p.y > canvas.height || p.y < 0) p.speedY *= -1;
+      particles.forEach((p, i) => {
+        const angle = rotation + (i / particleCount) * Math.PI * 2;
+        const radius = 40 + Math.sin(rotation * 2 + i * 0.1) * 20;
+        
+        p.x = centerX + Math.cos(angle) * radius;
+        p.y = centerY + Math.sin(angle) * radius;
 
-        ctx.fillStyle = p.color;
+        // Draw glow
+        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+        gradient.addColorStop(0, `hsla(${p.hue}, 100%, 70%, 0.8)`);
+        gradient.addColorStop(1, `hsla(${p.hue}, 100%, 50%, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw particle
+        ctx.fillStyle = `hsl(${p.hue}, 100%, 70%)`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
 
-        particles.forEach((p2) => {
+        // Connect nearby particles
+        particles.forEach((p2, j) => {
+          if (j <= i) return;
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
           if (distance < 50) {
             ctx.beginPath();
-            ctx.strokeStyle = p.color;
-            ctx.globalAlpha = 1 - distance / 50;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 100%, 60%, ${0.3 * (1 - distance / 50)})`;
+            ctx.lineWidth = 1;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
-            ctx.globalAlpha = 1;
           }
         });
       });
+
+      // Draw center glow
+      const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 30);
+      centerGradient.addColorStop(0, "rgba(139, 92, 246, 0.3)");
+      centerGradient.addColorStop(1, "rgba(139, 92, 246, 0)");
+      ctx.fillStyle = centerGradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+      ctx.fill();
 
       requestAnimationFrame(animate);
     }
@@ -90,16 +117,25 @@ export default function CustomLoader() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <canvas
-        ref={canvasRef}
-        className="rounded-full bg-black/30 backdrop-blur-md"
-        width={200}
-        height={200}
-      ></canvas>
-      <p className="mt-4 text-lg font-medium animate-pulse">
-        Generating your masterpiece...
-      </p>
+    <div className="flex flex-col items-center justify-center py-8">
+      <div className="relative">
+        {/* Outer glow ring */}
+        <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-xl animate-pulse" />
+        
+        <canvas
+          ref={canvasRef}
+          className="rounded-full"
+          width={200}
+          height={200}
+        />
+      </div>
+      
+      <div className="mt-8 text-center">
+        <h3 className="text-xl font-semibold text-gradient mb-2">Creating Magic</h3>
+        <p className="text-sm text-white/50 animate-pulse">
+          Transforming your imagination into art...
+        </p>
+      </div>
     </div>
   );
 }
