@@ -2,6 +2,8 @@
 
 A beautiful, modern AI-powered image generation platform built with Next.js. Generate stunning images from text prompts using the free Pollinations.ai API.
 
+🔗 **Live Demo**: [https://imagino-mu.vercel.app](https://imagino-mu.vercel.app)
+
 ![IMAGINO Preview](https://via.placeholder.com/800x400/1a1a2e/00EEFF?text=IMAGINO+-+AI+Image+Generator)
 
 ## 🚀 Features
