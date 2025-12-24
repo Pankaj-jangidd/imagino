@@ -17,6 +17,25 @@ const righteous = Righteous({
 export const metadata: Metadata = {
   title: "IMAGINO - AI Image Generator",
   description: "Create stunning AI-generated images with IMAGINO",
+  openGraph: {
+    title: "IMAGINO - AI Image Generator",
+    description: "Create stunning AI-generated images with IMAGINO",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "IMAGINO - AI Image Generator",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "IMAGINO - AI Image Generator",
+    description: "Create stunning AI-generated images with IMAGINO",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
